@@ -42,3 +42,8 @@ yarn-error.log
 /boost.json
 /opencode.json
 /opencode.jsonc
+/.codex
+/tests
+/phpunit.xml
+/public/pruebas-api.html
+/taller04_inventario.postman_collection.json

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\GuardarProductoRequest;
+use App\Models\Producto;
 use App\Services\ProductoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,6 +15,37 @@ class ProductoController extends Controller
     public function index(): JsonResponse
     {
         return response()->json($this->productoService->listar());
+    }
+
+    public function store(GuardarProductoRequest $request): JsonResponse
+    {
+        return response()->json(Producto::query()->create($request->validated()), 201);
+    }
+
+    public function update(GuardarProductoRequest $request, int $id): JsonResponse
+    {
+        $producto = Producto::query()->find($id);
+
+        if ($producto === null) {
+            return response()->json(['message' => 'Producto no encontrado.'], 404);
+        }
+
+        $producto->update($request->validated());
+
+        return response()->json($producto);
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $producto = Producto::query()->find($id);
+
+        if ($producto === null) {
+            return response()->json(['message' => 'Producto no encontrado.'], 404);
+        }
+
+        $producto->delete();
+
+        return response()->json(['message' => 'Producto eliminado correctamente.']);
     }
 
     public function show(int $id): JsonResponse

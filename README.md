@@ -1,122 +1,45 @@
-# API de productos
+# Inventario de productos
 
-Proyecto Laravel con tres endpoints JSON y un catálogo de cinco productos en memoria. La API no requiere base de datos, autenticación ni compilación del frontend.
+Aplicación Laravel con interfaz React/Inertia para registrar, consultar, editar y eliminar productos almacenados en MySQL/MariaDB mediante Eloquent.
 
-## Instalar
+## Requisitos
 
-Requisitos: PHP 8.3 o superior, Composer y las extensiones habituales de Laravel (`curl`, `fileinfo`, `mbstring`, `openssl`, `PDO`, `dom`, `xml` y `zip`). En este equipo se utiliza PHP 8.4 independiente de XAMPP.
+PHP 8.4, Composer, Node.js 22.12 o superior, npm y MySQL/MariaDB. En el entorno local, MariaDB de XAMPP utiliza el puerto 3307.
 
-Desde la carpeta del proyecto:
+## Configuración
 
-```powershell
-cd Laravel_Proyecto
-php -v
-composer install
-Copy-Item .env.example .env
-php artisan key:generate
-```
+1. Instala las dependencias con `composer install` y `npm install`.
+2. Copia `.env.example` a `.env` si todavía no existe y ejecuta `php artisan key:generate`.
+3. Crea la base de datos `db_inventario` y configura `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` y `DB_PASSWORD` en `.env`.
+4. Ejecuta `php artisan migrate` para crear las tablas.
+5. Compila la interfaz con `npm run build`.
+6. Inicia Laravel con `php artisan serve` y abre la dirección que muestre la terminal.
 
-Si ya existe `.env`, conserva ese archivo y omite la copia. No es necesario ejecutar migraciones para estos endpoints.
+Mantén MySQL/MariaDB encendido mientras utilizas la aplicación. Durante el desarrollo puedes ejecutar `npm run dev` en otra terminal para actualizar la interfaz automáticamente.
 
-## Ejecutar
+## Funcionalidades
 
-```powershell
-php artisan serve --host=127.0.0.1 --port=8000
-```
+- Registrar productos con nombre, precio y stock.
+- Consultar el catálogo y buscar productos por ID.
+- Editar los datos de un producto.
+- Eliminar productos desde la interfaz, previa confirmación.
+- Calcular el importe de una cantidad de productos.
 
-URL base: `http://127.0.0.1:8000`. Mantén la terminal abierta; usa Ctrl+C para detener el servidor.
+Los productos se leen y modifican en la base de datos. Si deseas cargar los cinco productos de ejemplo, ejecuta opcionalmente `php artisan db:seed --class=ProductoSeeder`.
 
-## Separación de responsabilidades
+## API
 
-- `routes/api.php`: define las rutas; Laravel añade el prefijo `/api`.
-- `app/Http/Controllers/ProductoController.php`: recibe solicitudes, valida los campos HTTP y devuelve JSON con el estado correspondiente.
-- `app/Services/ProductoService.php`: almacena el catálogo, busca por ID y calcula el total en centavos. El controlador no realiza cálculos ni contiene el catálogo.
-- `bootstrap/app.php`: registra las rutas API y configura respuestas JSON para sus errores.
+| Método | Ruta | Operación |
+| --- | --- | --- |
+| GET | `/api/productos` | Listar productos |
+| POST | `/api/productos` | Registrar producto |
+| GET | `/api/productos/{id}` | Consultar producto |
+| PUT | `/api/productos/{id}` | Actualizar producto |
+| DELETE | `/api/productos/{id}` | Eliminar producto |
+| POST | `/api/calcular-total` | Calcular importe |
 
-## Probar con Postman o Insomnia
+Las solicitudes de registro y edición reciben `nombre`, `precio` y `stock`. La API devuelve respuestas JSON y errores de validación con estado 422.
 
-Crea las siguientes solicitudes con el encabezado `Accept: application/json`. Para POST, selecciona Body → raw → JSON en Postman (o cuerpo JSON en Insomnia) y añade `Content-Type: application/json`.
+## Archivos locales
 
-### GET /api/productos
-
-Solicitud: `GET http://127.0.0.1:8000/api/productos`, sin cuerpo.
-
-Respuesta: **200 OK**.
-
-```json
-[
-    { "id": 1, "nombre": "Teclado", "precio": 25 },
-    { "id": 2, "nombre": "Mouse", "precio": 15 },
-    { "id": 3, "nombre": "Monitor", "precio": 180 },
-    { "id": 4, "nombre": "Audífonos", "precio": 35.5 },
-    { "id": 5, "nombre": "Webcam", "precio": 45 }
-]
-```
-
-### GET /api/productos/{id}
-
-Solicitud: `GET http://127.0.0.1:8000/api/productos/1`, sin cuerpo.
-
-Respuesta: **200 OK**.
-
-```json
-{ "id": 1, "nombre": "Teclado", "precio": 25 }
-```
-
-### POST /api/calcular-total
-
-Solicitud: `POST http://127.0.0.1:8000/api/calcular-total`.
-
-```json
-{ "producto_id": 1, "cantidad": 3 }
-```
-
-Respuesta: **200 OK**.
-
-```json
-{
-    "producto": "Teclado",
-    "precio_unitario": 25,
-    "cantidad": 3,
-    "total": 75
-}
-```
-
-### Errores
-
-- ID inexistente (por ejemplo, `999`): **404 Not Found**, tanto en consulta como en cálculo.
-
-```json
-{ "message": "Producto no encontrado." }
-```
-
-- Campos ausentes o inválidos: **422 Unprocessable Content**, con `message` y `errors`. Ambos campos son obligatorios y deben ser enteros entre 1 y 2147483647. Las cantidades cero, negativas o fraccionarias se rechazan.
-- Un ID no numérico en la ruta devuelve **404**.
-
-## Probar desde PowerShell (herramienta equivalente)
-
-Con el servidor en ejecución, abre otra terminal:
-
-```powershell
-Invoke-RestMethod http://127.0.0.1:8000/api/productos
-Invoke-RestMethod http://127.0.0.1:8000/api/productos/1
-Invoke-RestMethod http://127.0.0.1:8000/api/calcular-total `
-  -Method Post -ContentType 'application/json' `
-  -Body '{"producto_id":1,"cantidad":3}'
-```
-
-## Pruebas automatizadas
-
-```powershell
-php artisan test --filter=ProductoApiTest
-```
-
-Las pruebas de esta API no usan base de datos. Verifican listado, consulta, cálculo, decimales, productos inexistentes y validación de entradas. El starter kit también incluye pruebas de autenticación y frontend ajenas a esta API.
-
-## Verificación realizada
-
-- 8 pruebas automatizadas aprobadas, con 51 aserciones.
-- Los tres endpoints probados por HTTP con PowerShell: respuestas 200 y cuerpos coincidentes con los ejemplos anteriores.
-- Para la verificación HTTP se usó temporalmente el puerto 8001; puedes ejecutar el proyecto en 8000 como se indica arriba.
-- Formato PHP verificado con Pint y análisis estático de los archivos de la API aprobado con PHPStan.
-- El análisis estático general encontró una referencia a `app/Console/Commands/InstallFeaturesCommand.php`, ausente en el starter kit; la comprobación específica de esta API pasó sin errores.
+Git excluye `.env`, las dependencias instaladas, los archivos compilados, los registros, las bases SQLite locales y la configuración local del editor/agente. `.env.example` contiene la plantilla de configuración que necesita quien clone el repositorio.
